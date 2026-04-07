@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalBot — AI-Powered Crypto Signal System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --green: #00ff88;
+  --green-dim: #00cc6a;
+  --green-glow: rgba(0, 255, 136, 0.15);
+  --green-bg: rgba(0, 255, 136, 0.08);
+  --red: #ff4757;
+  --red-dim: #cc3a48;
+  --red-glow: rgba(255, 71, 87, 0.15);
+  --amber: #ffbe0b;
+  --amber-dim: #cc980a;
+  --amber-glow: rgba(255, 190, 11, 0.15);
+  --grey: #6b7280;
+  --grey-light: #9ca3af;
+  --bg-primary: #0a0e17;
+  --bg-secondary: #0f1420;
+  --bg-card: #131926;
+  --bg-card-hover: #182035;
+  --bg-elevated: #1a2235;
+  --border: #1e2a3a;
+  --border-light: #2a3a4e;
+  --text-primary: #e8edf5;
+  --text-secondary: #8b95a8;
+  --text-muted: #5a6478;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration: 0.6s;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body {
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 255, 136, 0.03), transparent),
+    var(--bg-primary);
+  overflow-x: hidden;
+}
+
+/* Grid background texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  padding: 80px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+section:last-of-type {
+  border-bottom: none;
+}
+
+/* ============================================
+   SCROLL ANIMATIONS
+   ============================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity var(--duration) var(--ease-out),
+              transform var(--duration) var(--ease-out);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+
+nav.scrolled {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+
+.nav-brand {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--green);
+  letter-spacing: 0.05em;
+}
+
+.nav-brand span {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--green);
+  background: var(--green-bg);
+}
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+/* ============================================
+   HEADER / HERO
+   ============================================ */
+.hero {
+  padding: 160px 0 100px;
+  text-align: center;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+}
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.hero h1 {
+  font-family: var(--font-sans);
+  font-size: clamp(2.8rem, 1rem + 5vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 16px;
+}
+
+.hero h1 .accent {
+  background: linear-gradient(135deg, var(--green), #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-tagline {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 100px;
+  background: var(--green-bg);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  color: var(--green);
+}
+
+.status-badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--green); }
+  50% { opacity: 0.5; box-shadow: 0 0 4px var(--green); }
+}
+
+/* ============================================
+   SECTION TITLES
+   ============================================ */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--green);
+}
+
+.section-title {
+  font-size: clamp(1.8rem, 1rem + 2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  max-width: 600px;
+  margin-bottom: 48px;
+}
+
+/* ============================================
+   ARCHITECTURE PIPELINE
+   ============================================ */
+.pipeline-container {
+  overflow-x: auto;
+  padding-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 900px;
+  padding: 20px 0;
+}
+
+.pipeline-node {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  text-align: center;
+}
+
+.node-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 2;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.pipeline-node:hover .node-icon {
+  border-color: var(--green);
+  box-shadow: 0 0 20px var(--green-glow);
+}
+
+.node-title {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.node-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  max-width: 130px;
+  line-height: 1.5;
+}
+
+.pipeline-arrow {
+  flex: 0 0 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 18px;
+  color: var(--green-dim);
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  position: relative;
+}
+
+.pipeline-arrow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-light), var(--green-dim));
+  transform: translateY(-8px);
+}
+
+.pipeline-arrow::after {
+  content: '\u25B6';
+  font-size: 0.6rem;
+  color: var(--green-dim);
+}
+
+/* ============================================
+   PHASE CARDS
+   ============================================ */
+.phases-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.phase-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: transform 0.3s var(--ease-out), border-color 0.3s, box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.phase-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-light);
+}
+
+.phase-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.phase-card.complete::before { background: var(--green); }
+.phase-card.in-progress::before { background: var(--amber); }
+.phase-card.pending::before { background: var(--border-light); }
+
+.phase-card.complete:hover {
+  border-color: rgba(0, 255, 136, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 255, 136, 0.05);
+}
+
+.phase-card.in-progress:hover {
+  border-color: rgba(255, 190, 11, 0.3);
+  box-shadow: 0 8px 30px rgba(255, 190, 11, 0.05);
+}
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.phase-number {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.phase-status {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+.phase-card.complete .phase-status {
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+}
+
+.phase-card.in-progress .phase-status {
+  color: var(--amber);
+  background: rgba(255, 190, 11, 0.08);
+  border: 1px solid rgba(255, 190, 11, 0.15);
+}
+
+.phase-card.pending .phase-status {
+  color: var(--grey);
+  background: rgba(107, 114, 128, 0.08);
+  border: 1px solid rgba(107, 114, 128, 0.15);
+}
+
+.phase-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.phase-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ============================================
+   SUBSCRIPTION PLANS
+   ============================================ */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.plan-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 24px;
+  text-align: center;
+  transition: transform 0.3s var(--ease-out), border-color 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+
+.plan-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-light);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.plan-card.featured {
+  border-color: rgba(0, 255, 136, 0.3);
+  background: linear-gradient(180deg, rgba(0, 255, 136, 0.04), var(--bg-card));
+}
+
+.plan-card.featured::after {
+  content: 'POPULAR';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--bg-primary);
+  background: var(--green);
+  padding: 3px 14px;
+  border-radius: 0 0 8px 8px;
+}
+
+.plan-name {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+
+.plan-timeframe {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.plan-price {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+.plan-price span {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.plan-period {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.plan-divider {
+  width: 40px;
+  height: 1px;
+  background: var(--border-light);
+  margin: 0 auto 20px;
+}
+
+.plan-details {
+  list-style: none;
+  text-align: left;
+}
+
+.plan-details li {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.plan-details li:last-child {
+  border-bottom: none;
+}
+
+.plan-details .detail-label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.plan-details .detail-value {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.margin-positive {
+  color: var(--green);
+}
+
+/* ============================================
+   TECH STACK
+   ============================================ */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.tech-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.tech-item:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.tech-icon {
+  font-size: 1.6rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.tech-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tech-name {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tech-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   SIGNAL EXAMPLE
+   ============================================ */
+.signal-wrapper {
+  max-width: 560px;
+}
+
+.signal-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.signal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.signal-header-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.signal-header-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.signal-body {
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 2;
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
+.signal-body .line-green { color: var(--green); }
+.signal-body .line-red { color: var(--red); }
+.signal-body .line-amber { color: var(--amber); }
+.signal-body .line-dim { color: var(--text-secondary); }
+.signal-body .line-muted { color: var(--text-muted); font-size: 0.72rem; }
+
+.signal-confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.confidence-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.confidence-value {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.confidence-bar {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+
+.signal-disclaimer {
+  padding: 12px 20px;
+  background: rgba(255, 190, 11, 0.04);
+  border-top: 1px solid rgba(255, 190, 11, 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--amber-dim);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+footer {
+  padding: 40px 0;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.footer-text {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.footer-text span {
+  color: var(--border-light);
+  margin: 0 10px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .plans-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  section {
+    padding: 60px 0;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: rgba(10, 14, 23, 0.95);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-toggle {
+    display: block;
+  }
+
+  .phases-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plans-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+
+  .tech-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline {
+    min-width: 700px;
+  }
+
+  .hero {
+    padding: 120px 0 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav id="navbar">
+  <div class="container">
+    <div class="nav-brand">SIGNALBOT <span>// v1.0</span></div>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle navigation">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#phases">Phases</a></li>
+      <li><a href="#plans">Plans</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#signal">Signal</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <div class="reveal hero-eyebrow">Internal Workflow Reference</div>
+    <h1 class="reveal reveal-delay-1"><span class="accent">Signal</span>Bot</h1>
+    <p class="reveal reveal-delay-2 hero-tagline">AI-Powered Crypto Signal System</p>
+    <div class="reveal reveal-delay-3">
+      <span class="status-badge">Phase 1 Complete</span>
+    </div>
+  </div>
+</header>
+
+<!-- SECTION 1: ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <div class="reveal section-label">Section 01</div>
+    <h2 class="reveal section-title">System Architecture</h2>
+    <p class="reveal section-desc">End-to-end data flow from market data ingestion through AI analysis to signal delivery.</p>
+
+    <div class="reveal reveal-delay-2 pipeline-container">
+      <div class="pipeline">
+
+        <div class="pipeline-node">
+          <div class="node-icon">&#128200;</div>
+          <div class="node-title">Binance API</div>
+          <div class="node-desc">Futures market data, klines, funding rates, OI</div>
+        </div>
+
+        <div class="pipeline-arrow"></div>
+
+        <div class="pipeline-node">
+          <div class="node-icon">&#128202;</div>
+          <div class="node-title">Raw Market Data</div>
+          <div class="node-desc">OHLCV candles, volume, indicators computed</div>
+        </div>
+
+        <div class="pipeline-arrow"></div>
+
+        <div class="pipeline-node">
+          <div class="node-icon">&#129302;</div>
+          <div class="node-title">Claude AI Analyst</div>
+          <div class="node-desc">Pattern recognition, risk assessment, scoring</div>
+        </div>
+
+        <div class="pipeline-arrow"></div>
+
+        <div class="pipeline-node">
+          <div class="node-icon">&#128275;</div>
+          <div class="node-title">Signal Gate</div>
+          <div class="node-desc">Quality filter, confidence threshold, dedup</div>
+        </div>
+
+        <div class="pipeline-arrow"></div>
+
+        <div class="pipeline-node">
+          <div class="node-icon">&#9992;&#65039;</div>
+          <div class="node-title">Telegram Channel</div>
+          <div class="node-desc">Formatted signal delivery to subscribers</div>
+        </div>
+
+        <div class="pipeline-arrow"></div>
+
+        <div class="pipeline-node">
+          <div class="node-icon">&#128203;</div>
+          <div class="node-title">Logger</div>
+          <div class="node-desc">signals.json archive, performance tracking</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: PHASES -->
+<section id="phases">
+  <div class="container">
+    <div class="reveal section-label">Section 02</div>
+    <h2 class="reveal section-title">The 9 Phases</h2>
+    <p class="reveal section-desc">Workflow roadmap from core build through monetization, growth, and compliance.</p>
+
+    <div class="phases-grid">
+
+      <div class="reveal phase-card complete">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 01</span>
+          <span class="phase-status">Complete</span>
+        </div>
+        <div class="phase-name">Build the Core</div>
+        <div class="phase-desc">APIs, strategy logic, Claude integration, Telegram delivery. Full end-to-end pipeline operational.</div>
+      </div>
+
+      <div class="reveal reveal-delay-1 phase-card in-progress">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 02</span>
+          <span class="phase-status">In Progress</span>
+        </div>
+        <div class="phase-name">Validation</div>
+        <div class="phase-desc">Backtest, paper trade 2-3 weeks, validate win rate and risk/reward ratios.</div>
+      </div>
+
+      <div class="reveal reveal-delay-2 phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 03</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Public Proof</div>
+        <div class="phase-desc">Free Telegram group, real signals + results, weekly performance stats published.</div>
+      </div>
+
+      <div class="reveal phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 04</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Funnel</div>
+        <div class="phase-desc">Free tier = 1 signal/day. Paid = 3-5 signals + full analysis + priority alerts.</div>
+      </div>
+
+      <div class="reveal reveal-delay-1 phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 05</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Monetization</div>
+        <div class="phase-desc">Subscription plans, automated payments, access control, billing infrastructure.</div>
+      </div>
+
+      <div class="reveal reveal-delay-2 phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 06</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Growth</div>
+        <div class="phase-desc">Micro-influencers, affiliate commissions, content strategy, social proof.</div>
+      </div>
+
+      <div class="reveal phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 07</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Retention</div>
+        <div class="phase-desc">Consistency, weekly performance reports, avoid overtrading, subscriber engagement.</div>
+      </div>
+
+      <div class="reveal reveal-delay-1 phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 08</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Expansion</div>
+        <div class="phase-desc">Performance dashboard, copy trading integration, SaaS platform for other traders.</div>
+      </div>
+
+      <div class="reveal reveal-delay-2 phase-card pending">
+        <div class="phase-header">
+          <span class="phase-number">PHASE 09</span>
+          <span class="phase-status">Pending</span>
+        </div>
+        <div class="phase-name">Legal & Risk</div>
+        <div class="phase-desc">NFA disclaimers, educational purpose framing, risk warnings, compliance review.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: SUBSCRIPTION PLANS -->
+<section id="plans">
+  <div class="container">
+    <div class="reveal section-label">Section 03</div>
+    <h2 class="reveal section-title">Subscription Plans</h2>
+    <p class="reveal section-desc">Tiered pricing based on signal frequency and analysis depth. Margins calculated against Claude API costs.</p>
+
+    <div class="plans-grid">
+
+      <div class="reveal plan-card">
+        <div class="plan-name">Position</div>
+        <div class="plan-timeframe">1h chart</div>
+        <div class="plan-price">$14<span>/mo</span></div>
+        <div class="plan-period">Entry-level</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-details">
+          <li><span class="detail-label">Signals/day</span><span class="detail-value">1-2</span></li>
+          <li><span class="detail-label">Claude cost</span><span class="detail-value">~$1/mo</span></li>
+          <li><span class="detail-label">Margin</span><span class="detail-value margin-positive">~93%</span></li>
+        </ul>
+      </div>
+
+      <div class="reveal reveal-delay-1 plan-card">
+        <div class="plan-name">Swing</div>
+        <div class="plan-timeframe">30min chart</div>
+        <div class="plan-price">$19<span>/mo</span></div>
+        <div class="plan-period">Active traders</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-details">
+          <li><span class="detail-label">Signals/day</span><span class="detail-value">2-3</span></li>
+          <li><span class="detail-label">Claude cost</span><span class="detail-value">~$2/mo</span></li>
+          <li><span class="detail-label">Margin</span><span class="detail-value margin-positive">~89%</span></li>
+        </ul>
+      </div>
+
+      <div class="reveal reveal-delay-2 plan-card featured">
+        <div class="plan-name">Standard</div>
+        <div class="plan-timeframe">15min chart</div>
+        <div class="plan-price">$29<span>/mo</span></div>
+        <div class="plan-period">Full analysis</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-details">
+          <li><span class="detail-label">Signals/day</span><span class="detail-value">3-5</span></li>
+          <li><span class="detail-label">Claude cost</span><span class="detail-value">~$4/mo</span></li>
+          <li><span class="detail-label">Margin</span><span class="detail-value margin-positive">~86%</span></li>
+        </ul>
+      </div>
+
+      <div class="reveal reveal-delay-3 plan-card">
+        <div class="plan-name">Scalper</div>
+        <div class="plan-timeframe">5min chart</div>
+        <div class="plan-price">$49<span>/mo</span></div>
+        <div class="plan-period">High frequency</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-details">
+          <li><span class="detail-label">Signals/day</span><span class="detail-value">5-8</span></li>
+          <li><span class="detail-label">Claude cost</span><span class="detail-value">~$9/mo</span></li>
+          <li><span class="detail-label">Margin</span><span class="detail-value margin-positive">~82%</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: TECH STACK -->
+<section id="stack">
+  <div class="container">
+    <div class="reveal section-label">Section 04</div>
+    <h2 class="reveal section-title">Tech Stack</h2>
+    <p class="reveal section-desc">Lightweight, focused tooling. No unnecessary dependencies.</p>
+
+    <div class="tech-grid">
+
+      <div class="reveal tech-item">
+        <div class="tech-icon">&#129302;</div>
+        <div class="tech-info">
+          <div class="tech-name">Claude Sonnet (claude-sonnet-4-20250514)</div>
+          <div class="tech-desc">AI analyst — pattern recognition, risk scoring, signal generation</div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-1 tech-item">
+        <div class="tech-icon">&#128225;</div>
+        <div class="tech-info">
+          <div class="tech-name">Binance Futures API</div>
+          <div class="tech-desc">Market data — klines, funding rates, open interest, volume</div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-2 tech-item">
+        <div class="tech-icon">&#128561;</div>
+        <div class="tech-info">
+          <div class="tech-name">Alternative.me</div>
+          <div class="tech-desc">Fear & Greed sentiment index for market context</div>
+        </div>
+      </div>
+
+      <div class="reveal tech-item">
+        <div class="tech-icon">&#9992;&#65039;</div>
+        <div class="tech-info">
+          <div class="tech-name">Telegram + Telegraf.js</div>
+          <div class="tech-desc">Signal delivery — formatted messages to channels and groups</div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-1 tech-item">
+        <div class="tech-icon">&#128994;</div>
+        <div class="tech-info">
+          <div class="tech-name">Node.js</div>
+          <div class="tech-desc">Backend runtime — ES modules, async pipeline</div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-2 tech-item">
+        <div class="tech-icon">&#128202;</div>
+        <div class="tech-info">
+          <div class="tech-name">signals.json</div>
+          <div class="tech-desc">Signal logger — full history archive for backtesting and stats</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: SIGNAL OUTPUT -->
+<section id="signal">
+  <div class="container">
+    <div class="reveal section-label">Section 05</div>
+    <h2 class="reveal section-title">Signal Output</h2>
+    <p class="reveal section-desc">Example Telegram signal message as delivered to subscribers.</p>
+
+    <div class="reveal reveal-delay-1 signal-wrapper">
+      <div class="signal-box">
+        <div class="signal-header">
+          <div class="signal-header-dot"></div>
+          <div class="signal-header-title">SIGNALBOT // LIVE SIGNAL</div>
+        </div>
+        <div class="signal-body">
+<span class="line-green">&#128994; LONG #BTCUSDT</span>
+
+&#127919; Entry: 83,200 - 83,450
+<span class="line-red">&#128721; Stop Loss: 82,100 (below structure)</span>
+<span class="line-amber">&#128176; TP1: 85,000
+&#128176; TP2: 87,200</span>
+
+&#9878;&#65039; Risk/Reward: 1:2.6
+&#128202; Position Size: 2.1% of account
+&#128274; Risk per Trade: 1.5% of account
+
+<span class="line-dim">&#128200; Structure: Price above all EMAs, clean uptrend</span>
+
+<span class="line-dim">&#129504; Analysis: Strong bullish momentum confirmed by MACD cross and volume spike. Funding rate neutral, no overheating. EMA alignment is clean across 20/50/200.</span>
+
+          <div class="signal-confidence">
+            <span class="confidence-label">Confidence:</span>
+            <span class="confidence-value">84%</span>
+            <span class="confidence-bar">&#9619;&#9619;&#9619;&#9619;&#9619;&#9619;&#9619;&#9619;&#9617;&#9617;</span>
+          </div>
+        </div>
+        <div class="signal-disclaimer">&#9888;&#65039; Educational purposes only. Not financial advice.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p class="footer-text">Internal use only &mdash; SignalBot Team<span>|</span>&copy; 2026</p>
+  </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script>
+// Scroll reveal
+const revealElements = document.querySelectorAll('.reveal');
+
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, {
+  threshold: 0.1,
+  rootMargin: '0px 0px -40px 0px'
+});
+
+revealElements.forEach(el => revealObserver.observe(el));
+
+// Navbar scroll shadow
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 10);
+}, { passive: true });
+
+// Close mobile nav on link click
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
